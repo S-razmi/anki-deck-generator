@@ -12,6 +12,27 @@ from pathlib import Path
 import genanki
 import pandas as pd
 
+def format_answer(text: str) -> str:
+    parts = text.split(maxsplit=1)
+
+    if len(parts) < 2:
+        return text
+
+    article, word = parts
+
+    if article == "der":
+        align = "left"
+        color = "blue"
+    elif article == "die":
+        align = "right"
+        color = "red"
+    elif article == "das":
+        align = "center"
+        color = "green"
+    else:
+        return text
+
+    return f'<div style="text-align:{align}; font-size:28px;"><span style="color:{color}">{article}</span> {word}</div>'
 
 def next_available(path: Path) -> Path:
     stem = path.stem  # "file"
@@ -127,7 +148,8 @@ if output_path.exists():
 
 deck = genanki.Deck(deck_id, deck_name)
 for front, back in words_data:
-    note = genanki.Note(model=model, fields=[front, back])
+    formatted_back = format_answer(back)
+    note = genanki.Note(model=model, fields=[front, formatted_back])
     deck.add_note(note)
 
 if append_mode:
