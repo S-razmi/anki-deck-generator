@@ -12,6 +12,10 @@ from pathlib import Path
 import genanki
 import pandas as pd
 
+
+# -------------------------
+# Formatting (FIXED)
+# -------------------------
 def format_answer(text: str) -> str:
     parts = text.split(maxsplit=1)
 
@@ -20,23 +24,18 @@ def format_answer(text: str) -> str:
 
     article, word = parts
 
-    if article == "der":
-        align = "left"
-        color = "blue"
-    elif article == "die":
-        align = "right"
-        color = "red"
-    elif article == "das":
-        align = "center"
-        color = "green"
-    else:
-        return text
+    if article in ["der", "die", "das"]:
+        return f'<div class="{article}">{article} {word}</div>'
 
-    return f'<div style="text-align:{align}; font-size:28px;"><span style="color:{color}">{article}</span> {word}</div>'
+    return text
 
+
+# -------------------------
+# Utility: avoid overwrite
+# -------------------------
 def next_available(path: Path) -> Path:
-    stem = path.stem  # "file"
-    suffix = path.suffix  # ".txt"
+    stem = path.stem
+    suffix = path.suffix
     i = 1
 
     while True:
@@ -46,11 +45,15 @@ def next_available(path: Path) -> Path:
         i += 1
 
 
+# -------------------------
+# Append to existing apkg
+# -------------------------
 def append_to_apkg(existing_apkg: str, new_deck: genanki.Deck, output_apkg: str = None):
     if output_apkg is None:
         output_apkg = existing_apkg
 
     temp_dir = tempfile.mkdtemp()
+
     try:
         with zipfile.ZipFile(existing_apkg, "r") as z:
             z.extractall(temp_dir)
@@ -73,12 +76,17 @@ def append_to_apkg(existing_apkg: str, new_deck: genanki.Deck, output_apkg: str 
                     file_path = os.path.join(root, file)
                     arcname = os.path.relpath(file_path, temp_dir)
                     outzip.write(file_path, arcname)
+
     finally:
         shutil.rmtree(temp_dir)
 
 
+# -------------------------
+# Excel logging
+# -------------------------
 def append_to_excel(excel_path: Path, sheet_name: str, data: list):
     df = pd.DataFrame(data, columns=["Front", "Back"])
+
     if not excel_path.exists():
         df.to_excel(excel_path, sheet_name=sheet_name[:31], index=False)
     else:
@@ -88,78 +96,137 @@ def append_to_excel(excel_path: Path, sheet_name: str, data: list):
             df.to_excel(writer, sheet_name=sheet_name[:31], index=False)
 
 
-model = genanki.Model(
-    1607392319,
-    "BasicModel",
-    fields=[
-        {"name": "Front"},
-        {"name": "Back"},
-    ],
-    templates=[
-        {
-            "name": "Card 1",
-            "qfmt": "{{Front}}",
-            "afmt": '{{Front}}<hr id="answer">{{Back}}',
-        },
-    ],
-)
+# -------------------------
+# MAIN
+# -------------------------
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input_file", type=str, required=True)
+    parser.add_argument("--output_file", type=str, default="deck.apkg")
+    parser.add_argument("--output_dir", type=str, default=".")
+    parser.add_argument("--excel_db", type=str, default="database.xlsx")
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--input_file", type=str, required=True)
-parser.add_argument("--output_file", type=str, default="untitled.apkg")
-parser.add_argument("--output_dir", type=str, default=".")
-parser.add_argument("--excel_db", type=str, default="database.xlsx")
+    args = parser.parse_args()
 
-args = parser.parse_args()
+    out_dir = Path(args.output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-out_dir = Path(args.output_dir)
-out_dir.mkdir(parents=True, exist_ok=True)
+    input_path = Path(args.input_file)
+    sheet_name = input_path.stem
 
-input_path = Path(args.input_file)
-sheet_name = input_path.stem
+    # -------------------------
+    # FIX: dynamic deck naming
+    # -------------------------
+    deck_name = f"German::{sheet_name}"
 
-words_data = []
-with open(input_path, "r", encoding="utf-8") as f:
-    for line in f:
-        if not line.strip():
-            continue
-        front, back = line.split("\t")  # tab separated
-        words_data.append((front.strip(), back.strip()))
+    # -------------------------
+    # FIX: unique deck ID
+    # -------------------------
+    deck_id = random.randrange(1 << 30, 1 << 31)
 
-output_path = out_dir / args.output_file
+    # -------------------------
+    # Model with CSS styling
+    # -------------------------
+    model = genanki.Model(
+        1607392319,
+        "GermanArticleModel",
+        fields=[
+            {"name": "Front"},
+            {"name": "Back"},
+        ],
+        templates=[
+            {
+                "name": "Card 1",
+                "qfmt": "{{Front}}",
+                "afmt": '{{Front}}<hr id="answer">{{Back}}',
+            },
+        ],
+        css="""
+        .card {
+            font-family: Arial;
+            font-size: 20px;
+            text-align: center;
+        }
 
-append_mode = False
-deck_name = "Generated Deck"
-deck_id = 2059400222
+        .der {
+            text-align: left;
+            color: blue;
+            font-size: 28px;
+        }
 
-if output_path.exists():
-    answer = input(
-        f"File path {output_path} Exists! should i append it to the current file or create a new file? [a/c]: "
+        .die {
+            text-align: right;
+            color: red;
+            font-size: 28px;
+        }
+
+        .das {
+            text-align: center;
+            color: green;
+            font-size: 28px;
+        }
+        """,
     )
-    if answer == "" or answer.lower() == "c":
-        output_path = next_available(output_path)
-    elif answer.lower() == "a":
-        append_mode = True
-        deck_name = f"Generated Deck::{sheet_name}"
-        deck_id = random.randrange(1 << 30, 1 << 31)
+
+    deck = genanki.Deck(deck_id, deck_name)
+
+    # -------------------------
+    # Read input file
+    # -------------------------
+    words_data = []
+
+    with open(input_path, "r", encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+
+            if "\t" not in line:
+                raise ValueError(f"Line is not tab-separated: {line}")
+
+            front, back = line.split("\t")
+            front = front.strip()
+            back = back.strip()
+
+            words_data.append((front, back))
+
+            formatted_back = format_answer(back)
+
+            note = genanki.Note(
+                model=model,
+                fields=[front, formatted_back],
+            )
+
+            deck.add_note(note)
+
+    # -------------------------
+    # Output handling
+    # -------------------------
+    output_path = out_dir / args.output_file
+
+    if output_path.exists():
+        answer = input(
+            f"{output_path} exists. Append or create new? [a/c]: "
+        ).lower()
+
+        if answer == "a":
+            append_to_apkg(str(output_path), deck, str(output_path))
+            print(f"Appended to {output_path}")
+        else:
+            output_path = next_available(output_path)
+            genanki.Package(deck).write_to_file(output_path)
+            print(f"Created {output_path}")
     else:
-        print("Please answer with a or c.")
-        exit(1)
+        genanki.Package(deck).write_to_file(output_path)
+        print(f"Created {output_path}")
 
-deck = genanki.Deck(deck_id, deck_name)
-for front, back in words_data:
-    formatted_back = format_answer(back)
-    note = genanki.Note(model=model, fields=[front, formatted_back])
-    deck.add_note(note)
+    # -------------------------
+    # Save Excel
+    # -------------------------
+    excel_path = out_dir / args.excel_db
+    append_to_excel(excel_path, sheet_name, words_data)
 
-if append_mode:
-    append_to_apkg(str(output_path), deck, str(output_path))
-    print(f"{output_path} successfully appended.")
-else:
-    genanki.Package(deck).write_to_file(output_path)
-    print(f"{output_path} successfully created.")
+    print(f"Saved to Excel: {excel_path} (sheet: {sheet_name[:31]})")
 
-excel_path = out_dir / args.excel_db
-append_to_excel(excel_path, sheet_name, words_data)
-print(f"Words successfully saved to {excel_path} in tab '{sheet_name[:31]}'.")
-# type: ignore
+
+if __name__ == "__main__":
+    main()
