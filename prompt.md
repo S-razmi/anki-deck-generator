@@ -32,7 +32,11 @@ Choose:
 Most common meaning if multiple exist
 
 Output format Examples:
+
 to upload	aufladen (aufgeladen)
+
 in addition	außerdem
+
 queue / line	die Schlange
+
 position / job (PL: die Stellen)	die Stelle
