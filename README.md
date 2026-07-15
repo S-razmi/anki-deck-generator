@@ -39,15 +39,32 @@ cat	chat
 
 Run the script via the command line, providing the path to your input text file.
 
-### Basic Example
+### Command Line Arguments
+
+| Argument | Description | Default |
+| :--- | :--- | :--- |
+| `--input_file` | **(Required)** Path to the text file containing tab-separated flashcards. | _None_ |
+| `--output_file` | Name of the generated Anki package (`.apkg`). | `deck.apkg` |
+| `--output_dir` | Directory where the Anki package and Excel database will be saved. | `.` (current directory) |
+| `--excel_db` | Name of the Excel database file used to store imported flashcards. | `database.xlsx` |
+| `--deck_name` | Name of the deck inside Anki. Use `::` to create nested decks (e.g., `German::Food`). If omitted, the deck name defaults to `German::<input_file_name>`. | `German::<input_file_name>` |
+
+### Example
 
 ```bash
-python code.py --input_file input_words.txt
+python create_deck.py \
+    --input_file vocabulary.txt \
+    --deck_name "German::B1::Food" \
+    --output_file german_b1.apkg
 ```
 
-**Outputs created natively in the current directory:**
-* `untitled.apkg` (The Anki Package)
-* `database.xlsx` (The Excel database containing an `input_words` tab)
+This creates an Anki deck with the following hierarchy:
+
+```
+German
+└── B1
+    └── Food
+```
 
 ### Appending to an Existing Deck
 
@@ -58,12 +75,3 @@ File path untitled.apkg Exists! should i append it to the current file or create
 ```
 * Type **`a`** to append the new notes as a sub-deck inside the existing `.apkg` file. The new words will also be appended to `database.xlsx` as a new sheet.
 * Type **`c`** to bypass the existing file and create a brand new file (e.g., `untitled_1.apkg`).
-
-### Command Line Arguments
-
-| Argument | Description | Default |
-| :--- | :--- | :--- |
-| `--input_file` | **(Required)** Path to the text file containing tab-separated words. | _None_ |
-| `--output_file` | The name of the generated Anki package. | `untitled.apkg` |
-| `--output_dir` | The directory where the Anki package and Excel database will be saved. | `.` (Current directory) |
-| `--excel_db` | The name of the Excel database file. | `database.xlsx` |
