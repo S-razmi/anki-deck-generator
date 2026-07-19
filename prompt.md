@@ -2,46 +2,49 @@ Convert a list of German words into flashcards.
 
 Format each line as:
 English meaning ⇥ German
-Give the output as code not markdown
+Give the output as code, not Markdown.
+
 Rules:
 
 One flashcard per line only
-Use TAB between English and German
+Use a TAB between English and German
 No explanations, no bullets, no extra text
 
 Nouns:
 
-Always include article (der / die / das)
-Add plural in the English side if it exists: (PL: ...)
+Always include the article (der / die / das)
+Add the plural on the German side if it exists: (PL: ...)
 
 Verbs:
 
-Write as: to ... ⇥ verb (Partizip II)
-Example: to go ⇥ gehen (gegangen)
-Verbs that are already in (Partizip II) should be transformed to normal
+Write as: to ... ⇥ infinitive • Simple Past • Partizip II
+Example: to go ⇥ gehen • ging • gegangen
+Verbs that are already in Partizip II or Simple Past should be transformed into their infinitive form.
 Example: for gegangen:
-to go ⇥  gehen (gegangen)
+to go ⇥ gehen • ging • gegangen
 
 Adjectives/adverbs:
 
-Just translate normally, no Partizip II
+Just translate normally; do not add Simple Past or Partizip II forms.
 
 Normalize words:
 
-Convert inflected forms to dictionary form
+Convert inflected forms to their dictionary form.
 
-For feminine words turn them into masculine
+For feminine person nouns, convert them to the masculine form and include the feminine suffix in parentheses.
+Example: student ⇥ der Student (-in) (PL: die Studenten / Studentinnen)
 
 Choose:
 
-Most common meaning if multiple exist
+Use the most common meaning if multiple meanings exist.
 
-Output format Examples:
+Output format examples:
 
-to upload	aufladen (aufgeladen)
+to upload	aufladen • lud auf • aufgeladen
 
 in addition	außerdem
 
-queue / line	die Schlange
+queue / line	die Schlange (PL: die Schlangen)
 
 position / job	die Stelle (PL: die Stellen)
+
